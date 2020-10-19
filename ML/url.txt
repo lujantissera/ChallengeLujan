@@ -1,0 +1,23 @@
+CLIENT ID : 
+491695313173-aemjgi4da94qdauk7pivm2ssgvph9vri.apps.googleusercontent.com
+PYTHON
+554596825471-hamt14rl0089q4ocud0tjoog0k6s0c0h.apps.googleusercontent.com
+
+CLIENT SECRET:
+XZIVjCbhtTu8wLxfkMEutDP_
+
+python
+jHcBRXCwRXcydzrW2ttzjqPQ
+
+
+API KEY
+AIzaSyAnCyRQ1TJ9uBulUoUwD7bfMQVu6Wh0qVc
+
+Codigo para conectar la Api con el drive:
+https://developers.google.com/drive/api/v3/quickstart/python
+
+
+Pagina de donde obtuve los nombres de las variables para las tablas:
+
+https://developers.google.com/drive/api/v3/reference/files
+
