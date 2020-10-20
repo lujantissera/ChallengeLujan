@@ -21,3 +21,8 @@ Pagina de donde obtuve los nombres de las variables para las tablas:
 
 https://developers.google.com/drive/api/v3/reference/files
 
+Para envìar el mail:
+https://learndataanalysis.org/how-to-use-gmail-api-to-send-an-email-in-python/
+
+
+

@@ -4,30 +4,33 @@ import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from gmail import sendMail
 
 import mysql.connector
 import datetime
-
-
 
 #---------conexión a la DDBB------
 db= mysql.connector.connect (
     host="localhost",
     user="root",
-    passwd="3596lulu",
-    database="DBMELI"
-
+    passwd="3596lulu"
+    #database="DBMELI"
 )
-
 cursor=db.cursor()
 
 #-------Crear DDBB-------------------------
 
 
 cursor.execute("CREATE  DATABASE IF NOT EXISTS  DBMELI ")
+db= mysql.connector.connect (
+    host="localhost",
+    user="root",
+    passwd="3596lulu",
+    database="DBMELI"
+)
+cursor=db.cursor()
 
 #--------Crear Primera tabla de archivos--------
-
 cursor.execute("""CREATE TABLE IF NOT EXISTS  FILES ( 
                                         filesname VARCHAR(100),
                                         extension VARCHAR (10),
@@ -35,7 +38,6 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS  FILES (
                                         visibility TINYINT(1),
                                         lastchangedate DATETIME
                                         )""")
-
 
 #-------Crear tabla de archivos que fueron públicos------
 cursor.execute("""CREATE TABLE IF NOT EXISTS publicfiles (                                        
@@ -45,9 +47,6 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS publicfiles (
                                         visibility TINYINT(1),
                                         lastchangedate DATETIME
                                         )""")
-
-
-
 
 # --- conectar con URL de la API If modifying these scopes, delete the file token.pickle. --> lastchange
 #SCOPES = ['https://www.googleapis.com/auth/drive.metadata']
@@ -61,7 +60,7 @@ def main():
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-
+    
     #----Si ya esta creada, que actualice. Sino que la instale----
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
@@ -76,41 +75,35 @@ def main():
             creds = flow.run_local_server(port=0)
         # que guarde las credenciales para la proxima entrada--- 
         with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-
-            
+            pickle.dump(creds, token)            
 
     service = build('drive', 'v3', credentials=creds)
 
     #---- Llamo a la Api Drive v3, le pongo los items que quiero que me traiga---
     results = service.files().list(
         pageSize=10, fields="nextPageToken, files(id, name, fullFileExtension, owners, shared, modifiedTime)").execute()
-    items = results.get('files', [])     
-   
+    items = results.get('files', [])      
     if not items:
         print('No files found.')
     else:
         print('Files:')
-        for item in items:
-
-            
+        cursor.execute("TRUNCATE TABLE FILES")
+        for item in items:            
             #-------variables a almacenar en la tabla--------------------
-
             #--nombre---
             filenames= item['name'].rsplit('.', 1)[0]
 
             #----extención----
-            fileExtension='N/A'
-            
+            fileExtension='N/A'            
             print(item)
             try:
                 fileExtension=item['fullFileExtension']
             except:
                 pass
             #---------Owner----------
-            for owner in item['owners']:
-                
+            for owner in item['owners']:                
                 ownerName=owner['displayName']
+                ownermail=owner['emailAddress']            
 
             #-----última modificacion---
             lastchange=item['modifiedTime']            
@@ -118,32 +111,16 @@ def main():
             lastchange=lastchange.strftime("%Y-%m-%dT%H:%M:%S")     
 
             #-------visibilidad------    
-            shared=int(item['shared'])
-          
+            shared=int(item['shared'])        
                       
-
             #print(service.permissions())
-
             print(shared)
-
             if shared == True:
-
                 cursor.execute("INSERT INTO  Publicfiles (filesname, extension,ownername,visibility,lastchangedate) VALUES ('%s','%s','%s','%s','%s')" %(filenames, fileExtension,ownerName,shared,lastchange))
-
-
                 service.permissions().delete(fileId=item['id'],permissionId="anyoneWithLink").execute()
-
-
-          
-
-
-            
-
-                       
-
-          
-            cursor.execute("INSERT INTO  FILES (filesname, extension,ownername,visibility,lastchangedate) VALUES ('%s','%s','%s','%s','%s')" %(filenames, fileExtension,ownerName,shared,lastchange))
-
+                sendMail(filenames, ownerName, ownermail)      
+                                                         
+            cursor.execute(" INSERT INTO  FILES (filesname, extension,ownername,visibility,lastchangedate) VALUES ('%s','%s','%s','%s','%s')" %(filenames, fileExtension,ownerName,shared,lastchange))
             db.commit()
 
 if __name__ == '__main__':
